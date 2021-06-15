@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-type Neuron struct {
+type neuron struct {
 	inputs           []float64
 	Weights          []float64
 	output           float64
@@ -22,10 +22,10 @@ func randFloatBeetween(min, max float64) float64 {
 	return min + rand.Float64()*(max-min)
 }
 
-func NewNeuronWithActivate(count uint, fActivate functionActivate) Neuron {
-	n := Neuron{}
-	n.inputs = make([]float64, count)
-	n.Weights = make([]float64, count)
+func NewNeuronWithActivate(count uint, fActivate functionActivate) *neuron {
+	n := new(neuron)
+	n.inputs = make([]float64, count+1)
+	n.Weights = make([]float64, count+1)
 	n.FunctionActivate = fActivate
 	for i := range n.Weights {
 		n.Weights[i] = randFloatBeetween(-2, 2)
@@ -35,22 +35,26 @@ func NewNeuronWithActivate(count uint, fActivate functionActivate) Neuron {
 	return n
 }
 
-func NewNeuron(count uint) Neuron {
+func NewNeuron(count uint) *neuron {
 	return NewNeuronWithActivate(count, defaultActivate)
 }
 
-func (n *Neuron) NuChanged() {
+func (n *neuron) NuChanged() {
 	n.nu = randFloatBeetween(-2, 2)
 	n.nuChanged = rand.Intn(100)
 }
 
-func (n *Neuron) Forward(data []float64) (float64, error) {
-	if len(n.inputs) != len(data) {
+func (n *neuron) Forward(data []float64) (float64, error) {
+	if len(n.inputs) != len(data)+1 {
 		return 0.0, fmt.Errorf("Количество входных данных: %d не соответствует количеству выходных %d\n", len(n.inputs), len(data))
 	}
 	for i := range n.inputs {
-		n.inputs[i] = data[i]
+		if i == 0 {
+			continue
+		}
+		n.inputs[i] = data[i-1]
 	}
+	n.inputs[0] = 1
 	n.output = n.FunctionActivate(n.inputs, n.Weights)
 	/*if n.nuChanged <= 0 {
 		n.NuChanged()
@@ -73,7 +77,7 @@ func defaultActivate(inputs, weights []float64) float64 {
 	return sum
 }
 
-func (n *Neuron) Adjustment(t float64) {
+func (n *neuron) Adjustment(t float64) {
 	fi := t - n.output
 	for i := range n.Weights {
 		dweight := n.inputs[i] * fi * n.nu

@@ -65,7 +65,7 @@ func main() {
 		A: 127,
 	}
 	p.Add(hist)
-	p.Add(hist2)
-	p.Save(30*vg.Inch, 5*vg.Inch, "hist.png")
+	//	p.Add(hist2)
+	p.Save(100*vg.Inch, 5*vg.Inch, "hist.png")
 
 }

@@ -10,17 +10,34 @@ import (
 
 type Link map[int][]int
 
-type network struct {
-	Inputlayer  []neuron.Neuron
-	Hiddenlayer [][]neuron.Neuron
-	Outputlayer []neuron.Neuron
-	Link        []Link
+type iNeuron interface {
+	Forward(data []float64) (float64, error)
 }
 
-func (n *network) fillLayer(layer []neuron.Neuron, count uint) {
-	for i := range layer {
-		layer[i] = neuron.NewNeuron(count)
+type network struct {
+	Inputlayer  []iNeuron
+	Hiddenlayer [][]iNeuron
+	Outputlayer []iNeuron
+	Link        Link
+}
+
+func GenerateBackPropagation(inputs int, hidden []int, output int) network {
+	nn := network{}
+	nn.Inputlayer = make([]iNeuron, inputs)
+	for i := range nn.Inputlayer {
+		nn.Inputlayer[i] = neuron.NewNeuron(1)
 	}
+	nn.Hiddenlayer = make([][]iNeuron, len(hidden))
+	for i := range nn.Hiddenlayer {
+		nn.Hiddenlayer[i] = make([]iNeuron, hidden[i])
+	}
+	nn.Outputlayer = make([]iNeuron, output)
+	for i := range nn.Outputlayer {
+		nn.Outputlayer[i] = neuron.NewNeuron(uint(hidden[len(hidden)-1]))
+	}
+	nn.Link = make(Link)
+
+	return nn
 }
 
 func LoadNetwork(filename string) (*network, error) {
@@ -52,4 +69,20 @@ func (n *network) SaveNetwork(filename string) error {
 		return err
 	}
 	return f.Close()
+}
+
+func (nn *network) Forward(inputs []float64) ([]float64, error) {
+	answersInput := make([]float64, len(nn.Inputlayer))
+	var err error
+	for i := range nn.Inputlayer {
+		answersInput[i], err = nn.Inputlayer[i].Forward(inputs)
+		if err != nil {
+			return nil, nil
+		}
+	}
+	for _, layers := range nn.Hiddenlayer {
+		for i := range layers {
+			layers[i].Forward(answersInput)
+		}
+	}
 }
